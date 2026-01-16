@@ -1,9 +1,6 @@
-import Phaser from 'phaser';
-import { auth } from '../auth/firebase-config';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword 
-} from 'firebase/auth';
+import * as Phaser from 'phaser';
+import { auth } from '../firebase/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { SCENE_KEYS } from './scene-keys';
 
 export class AuthScene extends Phaser.Scene {
@@ -16,39 +13,96 @@ export class AuthScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
-    // 1. Add a Title
-    this.add.text(width / 2, height * 0.2, 'THE TRIAL DUNGEON', {
-      fontSize: '32px',
-      color: '#fff'
-    }).setOrigin(0.5);
+    // -------------------------------
+    // 1️⃣ Add Responsive Title
+    // -------------------------------
+    const titleFontSize = Math.floor(width / 20); // scales with canvas width
+    this.add
+      .text(width / 2, height * 0.15, 'THE TRIAL DUNGEON', {
+        fontSize: `${titleFontSize}px`,
+        color: '#fff',
+        fontFamily: 'Arial',
+        align: 'center'
+      })
+      .setOrigin(0.5);
 
-    // 2. Create the HTML Form
-    // This creates a simple HTML structure inside the game
-    const element = this.add.dom(width / 2, height / 2).createFromHTML(`
-      <div style="color: white; display: flex; flex-direction: column; gap: 10px; width: 250px;">
-        <input type="email" id="email" placeholder="Email" style="padding: 8px;">
-        <input type="password" id="password" placeholder="Password" style="padding: 8px;">
-        <button id="submitBtn" style="padding: 10px; cursor: pointer; background: #4CAF50; color: white; border: none;">Login</button>
-        <p id="toggleText" style="cursor: pointer; text-align: center; text-decoration: underline;">Need an account? Register</p>
-        <p id="errorMessage" style="color: red; font-size: 12px; text-align: center;"></p>
+    // -------------------------------
+    // 2️⃣ Create Responsive HTML Form
+    // -------------------------------
+    const formWidth = Math.min(300, width * 0.35); // max 300px or 35% of width
+    const inputPadding = Math.floor(width / 200);
+    const fontSize = Math.floor(width / 80);
+    const buttonPadding = Math.floor(width / 100);
+    const buttonFontSize = Math.floor(width / 70);
+
+    const element = this.add.dom(width / 2, height * 0.45).createFromHTML(`
+      <div style="
+        color: white;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: ${formWidth}px;
+      ">
+        <input type="email" id="email" placeholder="Email" style="padding: ${inputPadding}px; font-size: ${fontSize}px;">
+        <input type="password" id="password" placeholder="Password" style="padding: ${inputPadding}px; font-size: ${fontSize}px;">
+        <button id="submitBtn" style="
+          padding: ${buttonPadding}px;
+          font-size: ${buttonFontSize}px;
+          cursor: pointer;
+          background: #4CAF50;
+          color: white;
+          border: none;
+        ">Login</button>
+        <p id="toggleText" style="
+          cursor: pointer;
+          text-align: center;
+          text-decoration: underline;
+          font-size: ${fontSize}px;
+        ">Need an account? Register</p>
+        <p id="errorMessage" style="
+          color: red;
+          font-size: ${Math.floor(fontSize * 0.8)}px;
+          text-align: center;
+        "></p>
       </div>
     `);
 
+    // -------------------------------
+    // 3️⃣ Cache DOM Elements
+    // -------------------------------
+    const emailInput = element.getChildByID('email') as HTMLInputElement;
+    const passwordInput = element.getChildByID('password') as HTMLInputElement;
     const submitBtn = element.getChildByID('submitBtn') as HTMLButtonElement;
     const toggleText = element.getChildByID('toggleText') as HTMLElement;
     const errorDisplay = element.getChildByID('errorMessage') as HTMLElement;
 
-    // 3. Handle Mode Toggle (Login vs Register)
+    // -------------------------------
+    // 4️⃣ Mode Toggle (Login <-> Register)
+    // -------------------------------
     toggleText.addEventListener('click', () => {
       this.isLoginMode = !this.isLoginMode;
       submitBtn.innerText = this.isLoginMode ? 'Login' : 'Register';
-      toggleText.innerText = this.isLoginMode ? 'Need an account? Register' : 'Have an account? Login';
+      toggleText.innerText = this.isLoginMode
+        ? 'Need an account? Register'
+        : 'Have an account? Login';
+      errorDisplay.innerText = '';
     });
 
-    // 4. Handle Firebase Logic
+    // -------------------------------
+    // 5️⃣ Firebase Logic
+    // -------------------------------
     submitBtn.addEventListener('click', async () => {
-      const email = (element.getChildByID('email') as HTMLInputElement).value;
-      const password = (element.getChildByID('password') as HTMLInputElement).value;
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      errorDisplay.innerText = '';
+
+      if (!email || !password) {
+        errorDisplay.innerText = 'Please enter email and password.';
+        return;
+      }
+
+      submitBtn.disabled = true; // disable button while processing
+      submitBtn.innerText = this.isLoginMode ? 'Logging in...' : 'Registering...';
 
       try {
         if (this.isLoginMode) {
@@ -56,11 +110,14 @@ export class AuthScene extends Phaser.Scene {
         } else {
           await createUserWithEmailAndPassword(auth, email, password);
         }
-        
+
         // Success! Move to the next scene
-        this.scene.start(SCENE_KEYS.INTRO_SCENE);
+        this.scene.start(SCENE_KEYS.PRELOAD_SCENE);
       } catch (error: any) {
         errorDisplay.innerText = error.message;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerText = this.isLoginMode ? 'Login' : 'Register';
       }
     });
   }

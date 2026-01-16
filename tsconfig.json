@@ -3,7 +3,11 @@
 		"outDir": "dist",
 		"typeRoots": [
       "node_modules/@types"
-    ]
+    ],
+	 "target": "ESNext",    // Allows modern JS features
+    "module": "ESNext",    // <--- This is the specific fix for your error
+    "moduleResolution": "bundler",
+    "strict": true
 	},
 	"include": [
 		"**/*.ts"

@@ -3,4 +3,5 @@ export const SCENE_KEYS = {
   GAME_SCENE: 'GAME_SCENE',
   UI_SCENE: 'UI_SCENE',
   GAME_OVER_SCENE: 'GAME_OVER_SCENE',
+  AUTH_SCENE: 'AUTH_SCENE',   // ✅ ADD THIS
 } as const;

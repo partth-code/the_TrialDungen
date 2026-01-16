@@ -1,13 +1,14 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly "AIzaSyBDS7ikbckzJLohxQgI3OXu1EEQCyN14X0": string;
-  readonly "trial-dungeon.firebaseapp.com": string;
-  readonly "https://trial-dungeon-default-rtdb.firebaseio.com" : string;
-  readonly "trial-dungeon": string;
-  readonly "trial-dungeon.firebasestorage.app": string;
-  readonly "209765440195": string;
-  readonly "1:209765440195:web:8d7c1f47d76ea75206e076": string;
+  // Use the VARIABLE NAMES here, not the values
+  readonly VITE_FIREBASE_API_KEY: string;
+  readonly VITE_FIREBASE_AUTH_DOMAIN: string;
+  readonly VITE_FIREBASE_DATABASE_URL: string;
+  readonly VITE_FIREBASE_PROJECT_ID: string;
+  readonly VITE_FIREBASE_STORAGE_BUCKET: string;
+  readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
+  readonly VITE_FIREBASE_APP_ID: string;
 }
 
 interface ImportMeta {
