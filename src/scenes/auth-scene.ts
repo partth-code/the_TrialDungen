@@ -16,7 +16,7 @@ export class AuthScene extends Phaser.Scene {
     // -------------------------------
     // 1️⃣ Add Responsive Title
     // -------------------------------
-    const titleFontSize = Math.floor(width / 20); // scales with canvas width
+    const titleFontSize = Math.floor(width / 20); 
     this.add
       .text(width / 2, height * 0.15, 'THE TRIAL DUNGEON', {
         fontSize: `${titleFontSize}px`,
@@ -29,7 +29,7 @@ export class AuthScene extends Phaser.Scene {
     // -------------------------------
     // 2️⃣ Create Responsive HTML Form
     // -------------------------------
-    const formWidth = Math.min(300, width * 0.35); // max 300px or 35% of width
+    const formWidth = Math.min(300, width * 0.35);
     const inputPadding = Math.floor(width / 200);
     const fontSize = Math.floor(width / 80);
     const buttonPadding = Math.floor(width / 100);
@@ -101,7 +101,7 @@ export class AuthScene extends Phaser.Scene {
         return;
       }
 
-      submitBtn.disabled = true; // disable button while processing
+      submitBtn.disabled = true; 
       submitBtn.innerText = this.isLoginMode ? 'Logging in...' : 'Registering...';
 
       try {
@@ -111,8 +111,9 @@ export class AuthScene extends Phaser.Scene {
           await createUserWithEmailAndPassword(auth, email, password);
         }
 
-        // Success! Move to the next scene
-        this.scene.start(SCENE_KEYS.PRELOAD_SCENE);
+        // ✅ UPDATED FLOW: Success -> Go to Main Menu (Intro)
+        this.scene.start(SCENE_KEYS.INTRO_SCENE);
+
       } catch (error: any) {
         errorDisplay.innerText = error.message;
       } finally {

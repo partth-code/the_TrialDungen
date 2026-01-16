@@ -133,7 +133,7 @@ export class GameScene extends Phaser.Scene {
     // collision between player and doors that can be unlocked
     this.physics.add.collider(this.#player, this.#lockedDoorGroup, (player, gameObject) => {
       const doorObject = gameObject as Phaser.Types.Physics.Arcade.GameObjectWithBody;
-      const door = this.#objectsByRoomId[this.#currentRoomId].doorMap[doorObject.name] as Door;
+      const door = this.#objectsByRoomId[this.#currentRoomId].doorMap[parseInt(doorObject.name, 10)] as Door;
 
       if (door.doorType !== DOOR_TYPE.LOCK && door.doorType !== DOOR_TYPE.BOSS) {
         return;
@@ -546,7 +546,7 @@ export class GameScene extends Phaser.Scene {
     // lock player input until transition is finished
     this.#controls.isMovementLocked = true;
 
-    const door = this.#objectsByRoomId[this.#currentRoomId].doorMap[doorTrigger.name] as Door;
+    const door = this.#objectsByRoomId[this.#currentRoomId].doorMap[parseInt(doorTrigger.name, 10)] as Door;
     const modifiedLevelName = door.targetLevel.toUpperCase();
     if (isLevelName(modifiedLevelName)) {
       const sceneData: LevelData = {

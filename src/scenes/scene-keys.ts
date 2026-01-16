@@ -1,7 +1,9 @@
 export const SCENE_KEYS = {
   PRELOAD_SCENE: 'PRELOAD_SCENE',
+  LOADING: 'LOAD_SCENE',
+  INTRO_SCENE: 'INTRO_SCENE', // Added this based on your file tree
   GAME_SCENE: 'GAME_SCENE',
   UI_SCENE: 'UI_SCENE',
   GAME_OVER_SCENE: 'GAME_OVER_SCENE',
-  AUTH_SCENE: 'AUTH_SCENE',   // ✅ ADD THIS
+  AUTH_SCENE: 'AUTH_SCENE',
 } as const;

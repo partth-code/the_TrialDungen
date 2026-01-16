@@ -4,6 +4,8 @@ import { GameScene } from './scenes/game-scene';
 import { UiScene } from './scenes/ui-scene';
 import { GameOverScene } from './scenes/game-over-scene';
 import { AuthScene } from './scenes/auth-scene';
+import { LoadingScene } from './scenes/loading-scene';
+import { IntroScene } from './scenes/intro-scene';
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.WEBGL,
@@ -23,7 +25,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [AuthScene,PreloadScene, GameScene, UiScene, GameOverScene],
+  scene: [PreloadScene,LoadingScene,AuthScene,IntroScene,GameScene, UiScene, GameOverScene],
   dom: {
     createContainer: true
 },
