@@ -6,6 +6,7 @@ import { GameOverScene } from './scenes/game-over-scene';
 import { AuthScene } from './scenes/auth-scene';
 import { LoadingScene } from './scenes/loading-scene';
 import { IntroScene } from './scenes/intro-scene';
+import SageTrialScene from './scenes/sage-trial-scene';
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.WEBGL,
@@ -25,7 +26,7 @@ const gameConfig: Phaser.Types.Core.GameConfig = {
       debug: false,
     },
   },
-  scene: [PreloadScene,LoadingScene,AuthScene,IntroScene,GameScene, UiScene, GameOverScene],
+  scene: [PreloadScene,LoadingScene,AuthScene,IntroScene,GameScene, UiScene, GameOverScene, SageTrialScene],
   dom: {
     createContainer: true
 },

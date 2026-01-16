@@ -91,7 +91,9 @@ export class UiScene extends Phaser.Scene {
     this.#dialogContainer.visible = true;
     this.#dialogContainerText.setText(message);
 
-    this.time.delayedCall(3000, () => {
+    // Auto-close dialog after 5 seconds (or 3 seconds for backward compatibility with other dialogs)
+    const timeout = message.includes("You've crossed the second gate") ? 5000 : 3000;
+    this.time.delayedCall(timeout, () => {
       this.#dialogContainer.visible = false;
       EVENT_BUS.emit(CUSTOM_EVENTS.DIALOG_CLOSED);
     });
