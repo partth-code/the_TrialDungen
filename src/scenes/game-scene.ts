@@ -43,6 +43,7 @@ import { CHARACTER_STATES } from '../components/state-machine/states/character/c
 import { WeaponComponent } from '../components/game-object/weapon-component';
 import { DataManager } from '../common/data-manager';
 import { Drow } from '../game-objects/enemies/boss/drow';
+import { Sage } from '../game-objects/npc/sage';
 
 export class GameScene extends Phaser.Scene {
   #levelData!: LevelData;
@@ -57,6 +58,7 @@ export class GameScene extends Phaser.Scene {
       switches: Button[];
       pots: Pot[];
       chests: Chest[];
+      sages: Sage[];
       enemyGroup?: Phaser.GameObjects.Group;
       room: TiledRoomObject;
     };
@@ -68,6 +70,8 @@ export class GameScene extends Phaser.Scene {
   #lockedDoorGroup!: Phaser.GameObjects.Group;
   #switchGroup!: Phaser.GameObjects.Group;
   #rewardItem!: Phaser.GameObjects.Image;
+  #sageGroup!: Phaser.GameObjects.Group;
+  #sKey!: Phaser.Input.Keyboard.Key;
 
   constructor() {
     super({
@@ -102,10 +106,33 @@ export class GameScene extends Phaser.Scene {
     this.#setupCamera();
     this.#rewardItem = this.add.image(0, 0, ASSET_KEYS.UI_ICONS, 0).setVisible(false).setOrigin(0, 1);
 
+    // Initialize 'S' key for Sage interaction
+    if (this.input.keyboard) {
+      this.#sKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
+    }
+
     this.#registerColliders();
     this.#registerCustomEvents();
 
     this.scene.launch(SCENE_KEYS.UI_SCENE);
+  }
+
+  public update(): void {
+    // Check if 'S' key is pressed - transition to Sage Trial Scene regardless of collision
+    if (this.#sKey && Phaser.Input.Keyboard.JustDown(this.#sKey)) {
+      console.log('S key pressed, transitioning to Sage Trial Scene');
+      
+      // Find any Sage in the current room and mark it as interacted if not already
+      const currentRoomSages = this.#objectsByRoomId[this.#currentRoomId]?.sages || [];
+      currentRoomSages.forEach((sage) => {
+        if (!sage.hasInteracted) {
+          sage.interact();
+        }
+      });
+      
+      // Transition to Sage Trial Scene
+      this.scene.start(SCENE_KEYS.SAGE_TRIAL_SCENE);
+    }
   }
 
   #registerColliders(): void {
@@ -128,6 +155,13 @@ export class GameScene extends Phaser.Scene {
     // collision between player and switches that can be stepped on
     this.physics.add.overlap(this.#player, this.#switchGroup, (playerObj, switchObj) => {
       this.#handleButtonPress(switchObj as Button);
+    });
+
+    // collision between player and sages (player can't walk through sage)
+    this.physics.add.collider(this.#player, this.#sageGroup, (player, sageObj) => {
+      const sage = sageObj as Sage;
+      // add sage to player's collision list for interaction
+      this.#player.collidedWithGameObject(sage as GameObject);
     });
 
     // collision between player and doors that can be unlocked
@@ -339,6 +373,7 @@ export class GameScene extends Phaser.Scene {
     this.#blockingGroup = this.add.group([]);
     this.#lockedDoorGroup = this.add.group([]);
     this.#switchGroup = this.add.group([]);
+    this.#sageGroup = this.add.group([]);
 
     // create game objects
     this.#createRooms(map, TILED_LAYER_NAMES.ROOMS);
@@ -360,6 +395,7 @@ export class GameScene extends Phaser.Scene {
     potLayerNames.forEach((layer) => this.#createPots(map, layer.name, layer.roomId));
     chestLayerNames.forEach((layer) => this.#createChests(map, layer.name, layer.roomId));
     enemyLayerNames.forEach((layer) => this.#createEnemies(map, layer.name, layer.roomId));
+    this.#createSages(map);
   }
 
   #setupCamera(): void {
@@ -414,11 +450,14 @@ export class GameScene extends Phaser.Scene {
         pots: [],
         doors: [],
         chests: [],
+        sages: [],
         room: tiledObject,
         chestMap: {},
         doorMap: {},
       };
     });
+    // Log all room IDs for debugging
+    console.log('Room IDs found:', Object.keys(this.#objectsByRoomId).map(id => parseInt(id, 10)));
   }
 
   /**
@@ -540,6 +579,41 @@ export class GameScene extends Phaser.Scene {
         continue;
       }
     }
+  }
+
+  /**
+   * Creates Sage NPC in the player's starting room at a fixed position.
+   */
+  #createSages(map: Phaser.Tilemaps.Tilemap): void {
+    const startingRoomId = this.#levelData.roomId;
+
+    // Check if the starting room exists
+    if (this.#objectsByRoomId[startingRoomId] === undefined) {
+      console.warn(`Starting room ${startingRoomId} does not exist. Cannot create Sage.`);
+      return;
+    }
+
+    const room = this.#objectsByRoomId[startingRoomId].room;
+    
+    // Fixed position: offset from room center (adjust these values as needed)
+    // Position Sage at a fixed offset from the room's top-left corner
+    // You can adjust these offsets to place the Sage exactly where you want
+    const fixedOffsetX = 128; // Fixed X offset from room left edge
+    const fixedOffsetY = 80;  // Fixed Y offset from room top edge
+    
+    // Calculate fixed position relative to room
+    // room.y is the bottom of the room in Tiled coordinates
+    const sagePosition = {
+      x: room.x + fixedOffsetX,
+      y: room.y - room.height + fixedOffsetY,
+    };
+
+    const sage = new Sage(this, sagePosition, startingRoomId);
+    this.#objectsByRoomId[startingRoomId].sages.push(sage);
+    this.#blockingGroup.add(sage);
+    this.#sageGroup.add(sage);
+    
+    console.log(`Sage created in starting room ${startingRoomId} at fixed position (${sagePosition.x}, ${sagePosition.y})`);
   }
 
   #handleRoomTransition(doorTrigger: Phaser.Types.Physics.Arcade.GameObjectWithBody): void {
@@ -737,6 +811,7 @@ export class GameScene extends Phaser.Scene {
     this.#objectsByRoomId[roomId].switches.forEach((button) => button.enableObject());
     this.#objectsByRoomId[roomId].pots.forEach((pot) => pot.resetPosition());
     this.#objectsByRoomId[roomId].chests.forEach((chest) => chest.enableObject());
+    this.#objectsByRoomId[roomId].sages.forEach((sage) => sage.enableObject());
     if (this.#objectsByRoomId[roomId].enemyGroup === undefined) {
       return;
     }
@@ -750,6 +825,7 @@ export class GameScene extends Phaser.Scene {
     this.#objectsByRoomId[roomId].switches.forEach((button) => button.disableObject());
     this.#objectsByRoomId[roomId].pots.forEach((pot) => pot.disableObject());
     this.#objectsByRoomId[roomId].chests.forEach((chest) => chest.disableObject());
+    this.#objectsByRoomId[roomId].sages.forEach((sage) => sage.disableObject());
     if (this.#objectsByRoomId[roomId].enemyGroup === undefined) {
       return;
     }

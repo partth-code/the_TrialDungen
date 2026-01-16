@@ -116,6 +116,16 @@
     ]
   },
   {
+    "path": "assets/images/sage",
+    "files": [
+      {
+        "type": "image",
+        "key": "SAGE",
+        "url": "sage-removebg-preview.png"
+      }
+    ]
+  },
+  {
     "path": "assets/images/levels/dungeon_1",
     "files": [
       {

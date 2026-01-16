@@ -6,4 +6,5 @@ export const SCENE_KEYS = {
   UI_SCENE: 'UI_SCENE',
   GAME_OVER_SCENE: 'GAME_OVER_SCENE',
   AUTH_SCENE: 'AUTH_SCENE',
+  SAGE_TRIAL_SCENE: 'SageTrialScene',
 } as const;

@@ -31,6 +31,7 @@ export type PlayerData = {
             unlocked: boolean;
           };
         };
+        sageUnlocked?: boolean;
       };
       bossDefeated?: boolean;
     };
@@ -121,6 +122,11 @@ export class DataManager {
 
   public defeatedCurrentAreaBoss(): void {
     this.#data.areaDetails[this.#data.currentArea.name].bossDefeated = true;
+  }
+
+  public updateSageUnlocked(roomId: number, unlocked: boolean): void {
+    this.#populateDefaultRoomData(roomId);
+    this.#data.areaDetails[this.#data.currentArea.name][roomId].sageUnlocked = unlocked;
   }
 
   #populateDefaultRoomData(roomId: number): void {
