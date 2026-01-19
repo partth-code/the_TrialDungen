@@ -105,8 +105,8 @@ Visuals are intentionally minimal to emphasize mechanics and immersion.
 ## 🧱 Tech Stack
 
 ### UI Layer
-- React  
-- Tailwind CSS  
+- HTML 
+- CSS  
 
 ### Game Logic Layer
 - Phaser.js  
