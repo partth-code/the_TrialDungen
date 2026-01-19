@@ -43,7 +43,8 @@ import { CHARACTER_STATES } from '../components/state-machine/states/character/c
 import { WeaponComponent } from '../components/game-object/weapon-component';
 import { DataManager } from '../common/data-manager';
 import { Drow } from '../game-objects/enemies/boss/drow';
-import { Sage } from '../game-objects/npc/sage';
+import { Sage } from '../game-objects/objects/sage';
+import { InteractiveObjectComponent } from '../components/game-object/interactive-object-component';
 
 export class GameScene extends Phaser.Scene {
   #levelData!: LevelData;
@@ -71,7 +72,10 @@ export class GameScene extends Phaser.Scene {
   #switchGroup!: Phaser.GameObjects.Group;
   #rewardItem!: Phaser.GameObjects.Image;
   #sageGroup!: Phaser.GameObjects.Group;
+  #sageInteractionZoneGroup!: Phaser.GameObjects.Group;
   #sKey!: Phaser.Input.Keyboard.Key;
+  #isNearSage: boolean = false;
+  #currentNearSage: Sage | null = null;
 
   constructor() {
     super({
@@ -118,20 +122,41 @@ export class GameScene extends Phaser.Scene {
   }
 
   public update(): void {
-    // Check if 'S' key is pressed - transition to Sage Trial Scene regardless of collision
-    if (this.#sKey && Phaser.Input.Keyboard.JustDown(this.#sKey)) {
-      console.log('S key pressed, transitioning to Sage Trial Scene');
-      
-      // Find any Sage in the current room and mark it as interacted if not already
-      const currentRoomSages = this.#objectsByRoomId[this.#currentRoomId]?.sages || [];
-      currentRoomSages.forEach((sage) => {
-        if (!sage.hasInteracted) {
-          sage.interact();
-        }
+    // Check if player is still overlapping with sage interaction zone
+    let stillOverlapping = false;
+    if (this.#currentNearSage && this.#currentNearSage.active && this.#currentNearSage.visible) {
+      this.physics.world.overlap(this.#player, this.#currentNearSage.interactionZone, () => {
+        stillOverlapping = true;
+        return true;
       });
+    }
+    
+    // If no longer overlapping, hide hint and reset
+    if (!stillOverlapping && this.#isNearSage) {
+      this.#isNearSage = false;
+      this.#currentNearSage = null;
+      EVENT_BUS.emit(CUSTOM_EVENTS.HIDE_INTERACTION_HINT);
+    }
+    
+    // Check if 'S' key is pressed while near a sage - transition to Sage Trial Scene
+    if (this.#sKey && Phaser.Input.Keyboard.JustDown(this.#sKey) && this.#isNearSage && this.#currentNearSage) {
+      console.log('S key pressed while near sage, transitioning to Sage Trial Scene');
       
-      // Transition to Sage Trial Scene
-      this.scene.start(SCENE_KEYS.SAGE_TRIAL_SCENE);
+      // Hide interaction hint
+      EVENT_BUS.emit(CUSTOM_EVENTS.HIDE_INTERACTION_HINT);
+      
+      // Mark sage as interacted if not already
+      if (!this.#currentNearSage.hasInteracted) {
+        this.#currentNearSage.interact();
+      }
+      
+      // Transition to Sage Trial Scene with current level data
+      const sceneData: LevelData = {
+        level: this.#levelData.level,
+        roomId: this.#currentRoomId,
+        doorId: this.#levelData.doorId,
+      };
+      this.scene.start(SCENE_KEYS.SAGE_TRIAL_SCENE, sceneData);
     }
   }
 
@@ -162,6 +187,24 @@ export class GameScene extends Phaser.Scene {
       const sage = sageObj as Sage;
       // add sage to player's collision list for interaction
       this.#player.collidedWithGameObject(sage as GameObject);
+    });
+
+    // overlap between player and sage interaction zones - track when player is near a sage for 'S' key interaction
+    this.physics.add.overlap(this.#player, this.#sageInteractionZoneGroup, (playerObj, zoneObj) => {
+      // Find the sage that owns this interaction zone
+      const zone = zoneObj as Phaser.GameObjects.Zone;
+      const currentRoomSages = this.#objectsByRoomId[this.#currentRoomId]?.sages || [];
+      const sage = currentRoomSages.find((s) => s.interactionZone === zone);
+      
+      if (sage && sage.active && sage.visible) {
+        const interactiveComponent = InteractiveObjectComponent.getComponent<InteractiveObjectComponent>(sage as GameObject);
+        if (interactiveComponent !== undefined && interactiveComponent.canInteractWith()) {
+          this.#isNearSage = true;
+          this.#currentNearSage = sage;
+          // Show interaction hint
+          EVENT_BUS.emit(CUSTOM_EVENTS.SHOW_INTERACTION_HINT);
+        }
+      }
     });
 
     // collision between player and doors that can be unlocked
@@ -374,6 +417,7 @@ export class GameScene extends Phaser.Scene {
     this.#lockedDoorGroup = this.add.group([]);
     this.#switchGroup = this.add.group([]);
     this.#sageGroup = this.add.group([]);
+    this.#sageInteractionZoneGroup = this.add.group([]);
 
     // create game objects
     this.#createRooms(map, TILED_LAYER_NAMES.ROOMS);
@@ -612,11 +656,20 @@ export class GameScene extends Phaser.Scene {
     this.#objectsByRoomId[startingRoomId].sages.push(sage);
     this.#blockingGroup.add(sage);
     this.#sageGroup.add(sage);
+    // Add interaction zone to separate group for overlap detection
+    this.#sageInteractionZoneGroup.add(sage.interactionZone);
     
     console.log(`Sage created in starting room ${startingRoomId} at fixed position (${sagePosition.x}, ${sagePosition.y})`);
   }
 
   #handleRoomTransition(doorTrigger: Phaser.Types.Physics.Arcade.GameObjectWithBody): void {
+    // Check if sage trial is completed before allowing transition
+    if (!DataManager.instance.getSageTrialCompleted()) {
+      console.log('Sage trial not completed. Cannot proceed to next area.');
+      EVENT_BUS.emit(CUSTOM_EVENTS.SHOW_DIALOG, 'Complete the Sage trial first!');
+      return;
+    }
+
     // lock player input until transition is finished
     this.#controls.isMovementLocked = true;
 
@@ -811,7 +864,13 @@ export class GameScene extends Phaser.Scene {
     this.#objectsByRoomId[roomId].switches.forEach((button) => button.enableObject());
     this.#objectsByRoomId[roomId].pots.forEach((pot) => pot.resetPosition());
     this.#objectsByRoomId[roomId].chests.forEach((chest) => chest.enableObject());
-    this.#objectsByRoomId[roomId].sages.forEach((sage) => sage.enableObject());
+    this.#objectsByRoomId[roomId].sages.forEach((sage) => {
+      sage.enableObject();
+      // Re-add interaction zone to group if not already there
+      if (!this.#sageInteractionZoneGroup.contains(sage.interactionZone)) {
+        this.#sageInteractionZoneGroup.add(sage.interactionZone);
+      }
+    });
     if (this.#objectsByRoomId[roomId].enemyGroup === undefined) {
       return;
     }

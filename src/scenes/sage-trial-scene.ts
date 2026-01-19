@@ -2,6 +2,8 @@ import * as Phaser from "phaser";
 import { ASSET_KEYS } from "../common/assets";
 import { SCENE_KEYS } from "./scene-keys";
 import { GeminiApiService, MCQQuestion } from "../services/gemini-api";
+import { DataManager } from "../common/data-manager";
+import { LevelData } from "../common/types";
 
 export default class SageTrialScene extends Phaser.Scene {
   private currentQuestionIndex = 0;
@@ -16,11 +18,19 @@ export default class SageTrialScene extends Phaser.Scene {
   private submitButton!: Phaser.GameObjects.Rectangle;
   private submitText!: Phaser.GameObjects.Text;
   private loadingText!: Phaser.GameObjects.Text;
+  private sceneData!: LevelData;
 
   private questions: MCQQuestion[] = [];
 
   constructor() {
     super("SageTrialScene");
+  }
+
+  init(data?: LevelData): void {
+    // Store scene data to return to the same room/position after trial
+    if (data) {
+      this.sceneData = data;
+    }
   }
 
   create() {
@@ -445,9 +455,17 @@ export default class SageTrialScene extends Phaser.Scene {
     this.submitButton.setVisible(false);
     this.submitText.setVisible(false);
 
-    // Return to game scene after delay
+    // Set flag that sage trial is completed
+    DataManager.instance.setSageTrialCompleted(true);
+    console.log('Sage trial completed! Flag set to true.');
+
+    // Return to game scene after delay with the same scene data
     this.time.delayedCall(3000, () => {
-      this.scene.start(SCENE_KEYS.GAME_SCENE);
+      if (this.sceneData) {
+        this.scene.start(SCENE_KEYS.GAME_SCENE, this.sceneData);
+      } else {
+        this.scene.start(SCENE_KEYS.GAME_SCENE);
+      }
     });
   }
 

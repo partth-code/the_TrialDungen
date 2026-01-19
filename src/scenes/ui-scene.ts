@@ -10,6 +10,7 @@ export class UiScene extends Phaser.Scene {
   #hearts!: Phaser.GameObjects.Sprite[];
   #dialogContainer!: Phaser.GameObjects.Container;
   #dialogContainerText!: Phaser.GameObjects.Text;
+  #interactionHintText!: Phaser.GameObjects.Text;
 
   constructor() {
     super({
@@ -50,13 +51,26 @@ export class UiScene extends Phaser.Scene {
     this.#dialogContainer.add(this.#dialogContainerText);
     this.#dialogContainer.visible = false;
 
+    // Create interaction hint text (centered at bottom of screen)
+    const { width, height } = this.scale;
+    this.#interactionHintText = this.add.text(width / 2, height - 40, 'Press S to talk', {
+      ...DEFAULT_UI_TEXT_STYLE,
+      fontSize: 10,
+      color: '#FFFF00',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setVisible(false);
+
     // register event listeners
     EVENT_BUS.on(CUSTOM_EVENTS.PLAYER_HEALTH_UPDATED, this.updateHealthInHud, this);
     EVENT_BUS.on(CUSTOM_EVENTS.SHOW_DIALOG, this.showDialog, this);
+    EVENT_BUS.on(CUSTOM_EVENTS.SHOW_INTERACTION_HINT, this.showInteractionHint, this);
+    EVENT_BUS.on(CUSTOM_EVENTS.HIDE_INTERACTION_HINT, this.hideInteractionHint, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       EVENT_BUS.off(CUSTOM_EVENTS.PLAYER_HEALTH_UPDATED, this.updateHealthInHud, this);
       EVENT_BUS.off(CUSTOM_EVENTS.SHOW_DIALOG, this.showDialog, this);
+      EVENT_BUS.off(CUSTOM_EVENTS.SHOW_INTERACTION_HINT, this.showInteractionHint, this);
+      EVENT_BUS.off(CUSTOM_EVENTS.HIDE_INTERACTION_HINT, this.hideInteractionHint, this);
     });
   }
 
@@ -97,5 +111,17 @@ export class UiScene extends Phaser.Scene {
       this.#dialogContainer.visible = false;
       EVENT_BUS.emit(CUSTOM_EVENTS.DIALOG_CLOSED);
     });
+  }
+
+  public showInteractionHint(): void {
+    if (this.#interactionHintText) {
+      this.#interactionHintText.setVisible(true);
+    }
+  }
+
+  public hideInteractionHint(): void {
+    if (this.#interactionHintText) {
+      this.#interactionHintText.setVisible(false);
+    }
   }
 }

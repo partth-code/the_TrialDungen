@@ -9,6 +9,7 @@ export class Sage extends Phaser.Physics.Arcade.Sprite implements CustomGameObje
   #position: Position;
   #roomId: number;
   #hasInteracted: boolean = false;
+  #interactionZone: Phaser.GameObjects.Zone;
 
   constructor(scene: Phaser.Scene, position: Position, roomId: number) {
     super(scene, position.x, position.y, ASSET_KEYS.SAGE);
@@ -41,11 +42,26 @@ export class Sage extends Phaser.Physics.Arcade.Sprite implements CustomGameObje
     this.#position = { x: position.x, y: position.y };
     this.#roomId = roomId;
 
-    // add interactive component for player interaction
+    // Create invisible interaction zone around the sage (larger than sprite for easier interaction)
+    // Zone is 64x64 pixels centered on the sage
+    const zoneSize = 64;
+    const zoneX = position.x;
+    const zoneY = position.y;
+    this.#interactionZone = scene.add
+      .zone(zoneX, zoneY, zoneSize, zoneSize)
+      .setOrigin(0.5, 1) // Center horizontally, anchor at bottom (same as sprite)
+      .setName(`sage-interaction-${roomId}`);
+    scene.physics.world.enable(this.#interactionZone);
+
+    // add interactive component for player interaction (similar to chests)
+    // Uses OPEN type so it requires key press to interact
     new InteractiveObjectComponent(
       this,
-      INTERACTIVE_OBJECT_TYPE.AUTO,
-      () => true,
+      INTERACTIVE_OBJECT_TYPE.OPEN,
+      () => {
+        // Player can always interact with sage if they haven't already
+        return !this.#hasInteracted;
+      },
       () => {
         this.interact();
       },
@@ -63,9 +79,16 @@ export class Sage extends Phaser.Physics.Arcade.Sprite implements CustomGameObje
     return this.#hasInteracted;
   }
 
+  get interactionZone(): Phaser.GameObjects.Zone {
+    return this.#interactionZone;
+  }
+
   public disableObject(): void {
     // disable body on game object so we stop triggering the collision
     (this.body as Phaser.Physics.Arcade.Body).enable = false;
+    // disable interaction zone
+    (this.#interactionZone.body as Phaser.Physics.Arcade.Body).enable = false;
+    this.#interactionZone.active = false;
     // make not visible until player re-enters room
     this.active = false;
     this.visible = false;
@@ -74,6 +97,9 @@ export class Sage extends Phaser.Physics.Arcade.Sprite implements CustomGameObje
   public enableObject(): void {
     // enable body on game object so we trigger the collision
     (this.body as Phaser.Physics.Arcade.Body).enable = true;
+    // enable interaction zone
+    (this.#interactionZone.body as Phaser.Physics.Arcade.Body).enable = true;
+    this.#interactionZone.active = true;
     // make visible to the player
     this.active = true;
     this.visible = true;

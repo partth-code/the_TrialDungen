@@ -36,6 +36,7 @@ export type PlayerData = {
       bossDefeated?: boolean;
     };
   };
+  isSageTrialCompleted: boolean;
 };
 
 export class DataManager {
@@ -58,6 +59,7 @@ export class DataManager {
         },
         WORLD: {},
       },
+      isSageTrialCompleted: false,
     };
   }
 
@@ -127,6 +129,14 @@ export class DataManager {
   public updateSageUnlocked(roomId: number, unlocked: boolean): void {
     this.#populateDefaultRoomData(roomId);
     this.#data.areaDetails[this.#data.currentArea.name][roomId].sageUnlocked = unlocked;
+  }
+
+  public setSageTrialCompleted(completed: boolean): void {
+    this.#data.isSageTrialCompleted = completed;
+  }
+
+  public getSageTrialCompleted(): boolean {
+    return this.#data.isSageTrialCompleted;
   }
 
   #populateDefaultRoomData(roomId: number): void {
