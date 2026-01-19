@@ -22,6 +22,7 @@ export class LoadingScene extends Phaser.Scene {
         // Using your asset pack from previous code
         this.load.pack(ASSET_PACK_KEYS.MAIN, 'assets/data/assets.json');
         
+        
         // (Optional) Keep a fallback if you don't have the json yet:
         // this.load.image('player', 'assets/sprites/player.png');
 
@@ -39,12 +40,27 @@ export class LoadingScene extends Phaser.Scene {
             this.assetText.setText('Loading asset: ' + file.key);
         });
 
-        this.load.on('complete', () => {
+       this.load.on('complete', () => {
             this.cleanup();
-            
-            // ✅ FLOW: Go to Auth Scene next
-            this.scene.start(SCENE_KEYS.AUTH_SCENE); 
+
+        // ✅ Create background music object
+        const bgMusic = this.sound.add('BG_MUSIC', {
+          loop: true,   // music repeats infinitely
+          volume: 0.9   // 0 = silent, 1 = full volume
         });
+      
+        // ✅ Play music after user clicks/taps
+        this.input.once('pointerdown', () => {
+          bgMusic.play();
+      
+          // Optional: save globally to access in other scenes
+          this.game.registry.set('bgMusic', bgMusic);
+        });
+
+  // ✅ Move to Auth Scene
+  this.scene.start(SCENE_KEYS.AUTH_SCENE);
+});
+
     }
 
     private createLoadingUI(): void {
