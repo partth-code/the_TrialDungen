@@ -1,7 +1,10 @@
 import * as Phaser from 'phaser';
-import { auth } from '../firebase/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { SCENE_KEYS } from './scene-keys';
+import {
+  registerWithEmail,
+  loginWithEmail,
+  loginWithGoogle,
+} from '../services/auth.service';
 
 export class AuthScene extends Phaser.Scene {
   private isLoginMode: boolean = true;
@@ -53,6 +56,14 @@ export class AuthScene extends Phaser.Scene {
           color: white;
           border: none;
         ">Login</button>
+        <button id="googleBtn" style="
+          padding: ${buttonPadding}px;
+          font-size: ${buttonFontSize}px;
+          cursor: pointer;
+          background: #db4437;
+          color: white;
+          border: none;
+        ">Sign in with Google</button>
         <p id="toggleText" style="
           cursor: pointer;
           text-align: center;
@@ -73,6 +84,7 @@ export class AuthScene extends Phaser.Scene {
     const emailInput = element.getChildByID('email') as HTMLInputElement;
     const passwordInput = element.getChildByID('password') as HTMLInputElement;
     const submitBtn = element.getChildByID('submitBtn') as HTMLButtonElement;
+    const googleBtn = element.getChildByID('googleBtn') as HTMLButtonElement;
     const toggleText = element.getChildByID('toggleText') as HTMLElement;
     const errorDisplay = element.getChildByID('errorMessage') as HTMLElement;
 
@@ -89,7 +101,7 @@ export class AuthScene extends Phaser.Scene {
     });
 
     // -------------------------------
-    // 5️⃣ Firebase Logic
+    // 5️⃣ Email/Password Authentication
     // -------------------------------
     submitBtn.addEventListener('click', async () => {
       const email = emailInput.value.trim();
@@ -101,24 +113,48 @@ export class AuthScene extends Phaser.Scene {
         return;
       }
 
-      submitBtn.disabled = true; 
+      submitBtn.disabled = true;
+      googleBtn.disabled = true;
       submitBtn.innerText = this.isLoginMode ? 'Logging in...' : 'Registering...';
 
       try {
         if (this.isLoginMode) {
-          await signInWithEmailAndPassword(auth, email, password);
+          await loginWithEmail(email, password);
         } else {
-          await createUserWithEmailAndPassword(auth, email, password);
+          await registerWithEmail(email, password);
         }
 
-        // ✅ UPDATED FLOW: Success -> Go to Main Menu (Intro)
+        // ✅ Success -> Go to Main Menu (Intro)
         this.scene.start(SCENE_KEYS.INTRO_SCENE);
 
       } catch (error: any) {
-        errorDisplay.innerText = error.message;
+        errorDisplay.innerText = error.message || 'An error occurred. Please try again.';
       } finally {
         submitBtn.disabled = false;
+        googleBtn.disabled = false;
         submitBtn.innerText = this.isLoginMode ? 'Login' : 'Register';
+      }
+    });
+
+    // -------------------------------
+    // 6️⃣ Google Sign-In Authentication
+    // -------------------------------
+    googleBtn.addEventListener('click', async () => {
+      errorDisplay.innerText = '';
+      submitBtn.disabled = true;
+      googleBtn.disabled = true;
+      googleBtn.innerText = 'Signing in...';
+
+      try {
+        await loginWithGoogle();
+        // ✅ Success -> Go to Main Menu (Intro)
+        this.scene.start(SCENE_KEYS.INTRO_SCENE);
+      } catch (error: any) {
+        errorDisplay.innerText = error.message || 'Google sign-in failed. Please try again.';
+      } finally {
+        submitBtn.disabled = false;
+        googleBtn.disabled = false;
+        googleBtn.innerText = 'Sign in with Google';
       }
     });
   }

@@ -21,6 +21,16 @@
       }
     ]
   },
+    {
+    "path": "assets/audio",
+    "files": [
+      {
+        "type": "audio",
+        "key": "BG_MUSIC",
+        "url": ["bg-music.mp3"]
+      }
+    ]
+  },
   {
     "path": "assets/images/ui",
     "files": [
@@ -164,5 +174,16 @@
         "url": "world.json"
       }
     ]
-  }
+  },
+  {
+  "path": "assets/audio",
+  "files": [
+    {
+      "type": "audio",
+      "key": "BG_MUSIC",
+      "url": ["bg-music.mp3"]
+    }
+  ]
+}
+
 ]
