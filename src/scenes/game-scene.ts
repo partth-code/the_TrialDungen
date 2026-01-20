@@ -296,6 +296,8 @@ export class GameScene extends Phaser.Scene {
     EVENT_BUS.on(CUSTOM_EVENTS.PLAYER_DEFEATED, this.#handlePlayerDefeatedEvent, this);
     EVENT_BUS.on(CUSTOM_EVENTS.DIALOG_CLOSED, this.#handleDialogClosed, this);
     EVENT_BUS.on(CUSTOM_EVENTS.BOSS_DEFEATED, this.#handleBossDefeated, this);
+    EVENT_BUS.on(CUSTOM_EVENTS.CHAT_OPENED, this.#handleChatOpened, this);
+    EVENT_BUS.on(CUSTOM_EVENTS.CHAT_CLOSED, this.#handleChatClosed, this);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       EVENT_BUS.off(CUSTOM_EVENTS.OPENED_CHEST, this.#handleOpenChest, this);
@@ -303,6 +305,8 @@ export class GameScene extends Phaser.Scene {
       EVENT_BUS.off(CUSTOM_EVENTS.PLAYER_DEFEATED, this.#handlePlayerDefeatedEvent, this);
       EVENT_BUS.off(CUSTOM_EVENTS.DIALOG_CLOSED, this.#handleDialogClosed, this);
       EVENT_BUS.off(CUSTOM_EVENTS.BOSS_DEFEATED, this.#handleBossDefeated, this);
+      EVENT_BUS.off(CUSTOM_EVENTS.CHAT_OPENED, this.#handleChatOpened, this);
+      EVENT_BUS.off(CUSTOM_EVENTS.CHAT_CLOSED, this.#handleChatClosed, this);
     });
   }
 
@@ -849,5 +853,15 @@ export class GameScene extends Phaser.Scene {
   #handleBossDefeated(): void {
     DataManager.instance.defeatedCurrentAreaBoss();
     this.#handleAllEnemiesDefeated();
+  }
+
+  #handleChatOpened(): void {
+    // Disable player movement and actions when chat is open
+    this.#controls.isMovementLocked = true;
+  }
+
+  #handleChatClosed(): void {
+    // Re-enable player movement and actions when chat is closed
+    this.#controls.isMovementLocked = false;
   }
 }

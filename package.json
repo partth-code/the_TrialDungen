@@ -29,6 +29,7 @@
 		"vite": "6.0.7"
 	},
 	"dependencies": {
+		"@google/genai": "^1.37.0",
 		"firebase": "^12.8.0",
 		"phaser": "3.87.0"
 	},
