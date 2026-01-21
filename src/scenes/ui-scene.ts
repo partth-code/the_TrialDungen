@@ -4,7 +4,7 @@ import { ASSET_KEYS, HEART_ANIMATIONS, HEART_TEXTURE_FRAME } from '../common/ass
 import { DataManager } from '../common/data-manager';
 import { CUSTOM_EVENTS, EVENT_BUS, PLAYER_HEALTH_UPDATE_TYPE, PlayerHealthUpdated } from '../common/event-bus';
 import { DEFAULT_UI_TEXT_STYLE } from '../common/common';
-import { sendMessageToGemini, ChatMessage } from '../services/gemini-service';
+import { sendMessageToGemini } from '../services/gemini-service';
 
 export class UiScene extends Phaser.Scene {
   #hudContainer!: Phaser.GameObjects.Container;
@@ -22,7 +22,7 @@ export class UiScene extends Phaser.Scene {
   #chatCloseButton!: Phaser.GameObjects.Container;
   #chatLoadingIndicator!: Phaser.GameObjects.Container;
   #isChatOpen: boolean = false;
-  #conversationHistory: ChatMessage[] = [];
+ 
   #escKey!: Phaser.Input.Keyboard.Key;
 
   constructor() {
@@ -129,48 +129,52 @@ export class UiScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Creates the chat icon button in the top-right corner
+ /**
+   * Creates the chat icon button in the top-right corner using the new bot asset
    */
   #createChatIcon(): void {
     const { width } = this.scale;
-    const iconSize = 24;
-    const iconX = width - 30;
-    const iconY = 30;
+    const iconX = width - 40; // Shifted slightly for better visibility
+    const iconY = 40;
 
-    // Create circular background
-    const iconBg = this.add.circle(iconX, iconY, iconSize / 2, 0x1a1a2e, 0.9);
-    iconBg.setStrokeStyle(2, 0x4a90e2);
+    // 1. Create a Glowing Background Circle (Gemini Style)
+    const iconBg = this.add.circle(iconX, iconY, 18, 0x1a73e8, 0.9);
+    iconBg.setStrokeStyle(2, 0x4285f4);
     iconBg.setInteractive({ useHandCursor: true });
-    iconBg.setScrollFactor(0); // Fixed to camera
+    iconBg.setScrollFactor(0);
 
-    // Create chat icon using graphics (simple speech bubble)
-    const iconGraphics = this.add.graphics();
-    iconGraphics.fillStyle(0xffffff);
-    iconGraphics.fillCircle(iconX - 4, iconY - 2, 3); // Left dot
-    iconGraphics.fillCircle(iconX, iconY - 2, 3); // Middle dot
-    iconGraphics.fillCircle(iconX + 4, iconY - 2, 3); // Right dot
-    iconGraphics.fillCircle(iconX, iconY + 2, 2); // Bottom dot
-    iconGraphics.setScrollFactor(0); // Fixed to camera
+    // 2. Add the Blue Robot Icon Sprite
+    const botSprite = this.add.image(iconX, iconY, 'gemini-bot');
+    botSprite.setScale(0.12); // Adjust this value based on your image resolution
+    botSprite.setScrollFactor(0);
 
-    // Hover effects
+    // 3. Hover effects (Visual Feedback)
     iconBg.on('pointerover', () => {
-      iconBg.setFillStyle(0x2a2a4e, 0.95);
-      iconBg.setStrokeStyle(2, 0x6ab0f2);
-    });
-    iconBg.on('pointerout', () => {
-      iconBg.setFillStyle(0x1a1a2e, 0.9);
-      iconBg.setStrokeStyle(2, 0x4a90e2);
+      this.tweens.add({
+        targets: [iconBg, botSprite],
+        scale: 1.1,
+        duration: 100
+      });
+      iconBg.setFillStyle(0x4285f4, 1);
     });
 
-    // Click handler
+    iconBg.on('pointerout', () => {
+      this.tweens.add({
+        targets: [iconBg, botSprite],
+        scale: 1,
+        duration: 100
+      });
+      iconBg.setFillStyle(0x1a73e8, 0.9);
+    });
+
+    // 4. Click handler to toggle the panel
     iconBg.on('pointerdown', () => {
       this.#toggleChat();
     });
 
-    this.#chatIconButton = this.add.container(0, 0, [iconBg, iconGraphics]);
-    this.#chatIconButton.setDepth(1000); // Ensure it's always on top
-    this.#chatIconButton.setScrollFactor(0); // Fixed to camera
+    this.#chatIconButton = this.add.container(0, 0, [iconBg, botSprite]);
+    this.#chatIconButton.setDepth(1000);
+    this.#chatIconButton.setScrollFactor(0);
   }
 
   /**
@@ -407,11 +411,9 @@ export class UiScene extends Phaser.Scene {
 
     try {
       // Send to Gemini API
-      const response = await sendMessageToGemini(message, this.#conversationHistory);
+      const response = await sendMessageToGemini(message);
       
-      // Add to conversation history
-      this.#conversationHistory.push({ role: 'user', content: message });
-      this.#conversationHistory.push({ role: 'assistant', content: response });
+      
       
       // Add assistant response to UI
       this.#addChatMessage('assistant', response, true);

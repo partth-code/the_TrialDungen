@@ -13,6 +13,8 @@ export class PreloadScene extends Phaser.Scene {
     // load asset pack that has assets for the rest of the game
     this.load.pack(ASSET_PACK_KEYS.MAIN, 'assets/data/assets.json');
     this.load.image('bg-image', 'assets/images/ui/bg-image.png');
+    // Add this to your preload() method
+    this.load.image('gemini-bot', 'assets/images/ui/chatbot-icon.png');
   }
 
   public create(): void {
