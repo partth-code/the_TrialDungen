@@ -36,7 +36,8 @@ export function isTiledObjectProperty(property: unknown): property is TiledObjec
   if (typeof property !== 'object' || property === null || property === undefined) {
     return false;
   }
-  return property['name'] !== undefined && property['type'] !== undefined && property['value'] !== undefined;
+  const prop = property as Record<string, unknown>;
+  return prop['name'] !== undefined && prop['type'] !== undefined && prop['value'] !== undefined;
 }
 
 /**
@@ -217,11 +218,11 @@ export function getTiledDoorObjectsFromMap(map: Phaser.Tilemaps.Tilemap, layerNa
 }
 
 export function isDoorType(doorType: string): doorType is DoorType {
-  return DOOR_TYPE[doorType] !== undefined;
+  return doorType in DOOR_TYPE;
 }
 
 export function isTrapType(trapType: string): trapType is TrapType {
-  return TRAP_TYPE[trapType] !== undefined;
+  return trapType in TRAP_TYPE;
 }
 
 /**
@@ -290,7 +291,7 @@ export function getTiledChestObjectsFromMap(map: Phaser.Tilemaps.Tilemap, layerN
 }
 
 export function isChestReward(reward: string): reward is ChestReward {
-  return CHEST_REWARD[reward] !== undefined;
+  return reward in CHEST_REWARD;
 }
 
 /**
@@ -357,9 +358,9 @@ export function getTiledSwitchObjectsFromMap(map: Phaser.Tilemaps.Tilemap, layer
 }
 
 export function isSwitchTexture(switchTexture: string): switchTexture is SwitchTexture {
-  return SWITCH_TEXTURE[switchTexture] !== undefined;
+  return switchTexture in SWITCH_TEXTURE;
 }
 
 export function isSwitchAction(switchAction: string): switchAction is SwitchAction {
-  return SWITCH_ACTION[switchAction] !== undefined;
+  return switchAction in SWITCH_ACTION;
 }

@@ -12,14 +12,14 @@ export class BaseGameObjectComponent {
   }
 
   static getComponent<T>(gameObject: GameObject): T {
-    return gameObject[`_${this.name}`] as T;
+    return (gameObject as unknown as Record<string, unknown>)[`_${this.name}`] as T;
   }
 
   static removeComponent(gameObject: GameObject): void {
-    delete gameObject[`_${this.name}`];
+    delete (gameObject as unknown as Record<string, unknown>)[`_${this.name}`];
   }
 
   protected assignComponentToObject(object: GameObject | Phaser.Physics.Arcade.Body): void {
-    object[`_${this.constructor.name}`] = this;
+    (object as unknown as Record<string, unknown>)[`_${this.constructor.name}`] = this;
   }
 }

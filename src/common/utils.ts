@@ -23,11 +23,12 @@ export function isArcadePhysicsBody(
 }
 
 export function isDirection(direction: string): direction is Direction {
-  return DIRECTION[direction] !== undefined;
+  return direction in DIRECTION;
 }
 
 export function isCustomGameObject(gameObject: GameObject): gameObject is GameObject & CustomGameObject {
-  return gameObject['disableObject'] !== undefined && gameObject['enableObject'] !== undefined;
+  const obj = gameObject as unknown as Record<string, unknown>;
+  return obj['disableObject'] !== undefined && obj['enableObject'] !== undefined;
 }
 
 export function getDirectionOfObjectFromAnotherObject(object: Position, targetObject: Position): Direction {
@@ -44,5 +45,5 @@ export function getDirectionOfObjectFromAnotherObject(object: Position, targetOb
 }
 
 export function isLevelName(levelName: string): levelName is LevelName {
-  return LEVEL_NAME[levelName] !== undefined;
+  return levelName in LEVEL_NAME;
 }
